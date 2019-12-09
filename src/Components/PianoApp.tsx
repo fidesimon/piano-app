@@ -15,9 +15,6 @@ export interface MIDINavigator extends Navigator {
 }
 
 export default class PianoApp extends React.Component<PianoAppProps, PianoAppState> {
-    private audioContext: AudioContext = new AudioContext();
-    private midiAccess: any;
-
     constructor(props: PianoAppProps){
         super(props);
         this.state = {keysPressed: []};
@@ -25,7 +22,7 @@ export default class PianoApp extends React.Component<PianoAppProps, PianoAppSta
 
     async connectMIDI() : Promise<any>{
         if((navigator as MIDINavigator).requestMIDIAccess) {
-            let midiAccess = await (navigator as MIDINavigator).requestMIDIAccess();//.then(this.onMIDIInit.bind(this), this.onMIDIReject.bind(this));
+            let midiAccess = await (navigator as MIDINavigator).requestMIDIAccess();
             let inputs = midiAccess.inputs.values();
             let midiDeviceName = null;
             for (var input = inputs.next(); input && !input.done; input = inputs.next()) {
@@ -35,10 +32,6 @@ export default class PianoApp extends React.Component<PianoAppProps, PianoAppSta
                 }
             }
         }
-    }
-
-    onMIDIReject(err: any) {
-        console.log("The MIDI system failed to start.");
     }
 
     MIDIMessageEventHandler(event: any) {
