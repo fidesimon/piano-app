@@ -6,7 +6,7 @@ export interface PianoAppProps{
 }
 
 export interface PianoAppState{
-
+    keysPressed: number[];
 }
 
 export interface MIDINavigator extends Navigator {
@@ -19,6 +19,7 @@ export default class PianoApp extends React.Component<PianoAppProps, PianoAppSta
 
     constructor(props: PianoAppProps){
         super(props);
+        this.state = {keysPressed: []};
     }
 
     componentWillMount(){
@@ -56,12 +57,21 @@ export default class PianoApp extends React.Component<PianoAppProps, PianoAppSta
         switch (event.data[0] & 0xf0) {
             case 0x90:
                 if (event.data[2] != 0) {  // if velocity != 0, this is a note-on message
-                    console.log("Note played: " + event.data[1]);
+                    let keyOn = event.data[1];
+                    console.log(`Note played: ${keyOn}`);
+                    let keys = this.state.keysPressed;
+                    keys.push(keyOn)
+                    this.setState({ keysPressed: keys});
                     return;
                 }
             // if velocity == 0, fall thru: it's a note-off.  MIDI's weird, y'all.
             case 0x80:
-                console.log("Note off: " + event.data[1]);
+                let keyOff = event.data[1];
+                console.log(`Note off: ${keyOff}`);
+                let keys = this.state.keysPressed;
+                let index = keys.indexOf(keyOff);
+                keys.splice(index, 1);
+                this.setState({ keysPressed: keys});
                 return;
         }
     }
@@ -71,6 +81,14 @@ export default class PianoApp extends React.Component<PianoAppProps, PianoAppSta
         return (
             <>
                 Welcome
+                <br />
+                <div>
+                    Keys pressed: <ul>
+                        {this.state.keysPressed.map((key) => {
+                            return <div>{key}</div>
+                        })}
+                    </ul>
+                </div>
             </>
         );
     }
