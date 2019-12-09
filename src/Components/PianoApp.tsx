@@ -1,5 +1,6 @@
 import * as React from 'react';
 import {WebMidi} from 'webmidi';
+import { MIDIDevice } from './MIDIDevice';
 
 export interface PianoAppProps{
     
@@ -22,29 +23,17 @@ export default class PianoApp extends React.Component<PianoAppProps, PianoAppSta
         this.state = {keysPressed: []};
     }
 
-    componentWillMount(){
+    async connectMIDI() : Promise<any>{
         if((navigator as MIDINavigator).requestMIDIAccess) {
-            (navigator as MIDINavigator).requestMIDIAccess().then(this.onMIDIInit.bind(this), this.onMIDIReject.bind(this));
-        }
-    }
-
-    onMIDIInit(midi: any) {
-        console.log('midi init.');
-        this.midiAccess = midi;
-        let name = "";
-
-        var haveAtLeastOneDevice = false;
-        var inputs = this.midiAccess.inputs.values();
-        for (var input = inputs.next(); input && !input.done; input = inputs.next()) {
-            input.value.onmidimessage = this.MIDIMessageEventHandler.bind(this);
-            name = input.value.name;
-            haveAtLeastOneDevice = true;
-        }
-        if (!haveAtLeastOneDevice) {
-            console.log("No devices plugged.");
-        } else {
-            var input = inputs[0];
-            console.log("Device connected. " + name);
+            let midiAccess = await (navigator as MIDINavigator).requestMIDIAccess();//.then(this.onMIDIInit.bind(this), this.onMIDIReject.bind(this));
+            let inputs = midiAccess.inputs.values();
+            let midiDeviceName = null;
+            for (var input = inputs.next(); input && !input.done; input = inputs.next()) {
+                if(input.value !== undefined){
+                    input.value.onmidimessage = this.MIDIMessageEventHandler.bind(this);
+                    return input.value;
+                }
+            }
         }
     }
 
@@ -82,10 +71,12 @@ export default class PianoApp extends React.Component<PianoAppProps, PianoAppSta
             <>
                 Welcome
                 <br />
+                <MIDIDevice connected={false} refreshConnection={this.connectMIDI.bind(this)} />
+                <br />
                 <div>
                     Keys pressed: <ul>
                         {this.state.keysPressed.map((key) => {
-                            return <div>{key}</div>
+                            return <div key={key}>{key}</div>
                         })}
                     </ul>
                 </div>
