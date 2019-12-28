@@ -3,9 +3,13 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import App from './App';
 import PianoApp from './Components/PianoApp';
+import { Provider } from 'react-redux';
+import configureStore from './redux/configureStore';
 ////import * as serviceWorker from './serviceWorker';
 
-ReactDOM.render(<PianoApp />, document.getElementById('root'));
+const store = configureStore([]);
+
+ReactDOM.render(<Provider store={store}><PianoApp /></Provider>, document.getElementById('root'));
 
 // If you want your app to work offline and load faster, you can change
 // unregister() to register() below. Note this comes with some pitfalls.

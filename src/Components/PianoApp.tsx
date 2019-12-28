@@ -1,12 +1,16 @@
 import * as React from 'react';
-import {WebMidi} from 'webmidi';
+import { WebMidi } from 'webmidi';
 import { MIDIDevice } from './MIDIDevice';
+import { connect, useDispatch } from 'react-redux';
+import * as pianoActions from '../redux/actions/pianoActions';
+import { bindActionCreators, Dispatch } from 'redux';
 
-export interface PianoAppProps{
-    
+export interface PianoAppProps {
+    onKeyPressed: (key: number) => void;
+    key?: number;
 }
 
-export interface PianoAppState{
+export interface PianoAppState {
     keysPressed: number[];
 }
 
@@ -14,19 +18,18 @@ export interface MIDINavigator extends Navigator {
     requestMIDIAccess(options?: WebMidi.MIDIOptions): Promise<WebMidi.MIDIAccess>;
 }
 
-export default class PianoApp extends React.Component<PianoAppProps, PianoAppState> {
-    constructor(props: PianoAppProps){
+class PianoApp extends React.Component<any, PianoAppState> {
+    constructor(props: any) {
         super(props);
-        this.state = {keysPressed: []};
+        this.state = { keysPressed: [] };
     }
 
-    async connectMIDI() : Promise<any>{
-        if((navigator as MIDINavigator).requestMIDIAccess) {
+    async connectMIDI(): Promise<any> {
+        if ((navigator as MIDINavigator).requestMIDIAccess) {
             let midiAccess = await (navigator as MIDINavigator).requestMIDIAccess();
             let inputs = midiAccess.inputs.values();
-            let midiDeviceName = null;
             for (var input = inputs.next(); input && !input.done; input = inputs.next()) {
-                if(input.value !== undefined){
+                if (input.value !== undefined) {
                     input.value.onmidimessage = this.MIDIMessageEventHandler.bind(this);
                     return input.value;
                 }
@@ -40,26 +43,20 @@ export default class PianoApp extends React.Component<PianoAppProps, PianoAppSta
             case 0x90:
                 if (event.data[2] != 0) {  // if velocity != 0, this is a note-on message
                     let keyOn = event.data[1];
-                    console.log(`Note played: ${keyOn}`);
-                    let keys = this.state.keysPressed;
-                    keys.push(keyOn)
-                    this.setState({ keysPressed: keys});
+                    this.props.onKeyPressed(keyOn);
                     return;
                 }
             // if velocity == 0, fall thru: it's a note-off.  MIDI's weird, y'all.
             case 0x80:
                 let keyOff = event.data[1];
-                console.log(`Note off: ${keyOff}`);
-                let keys = this.state.keysPressed;
-                let index = keys.indexOf(keyOff);
-                keys.splice(index, 1);
-                this.setState({ keysPressed: keys});
+                this.props.onKeyOff(keyOff);
                 return;
         }
     }
 
 
-    render(){
+    render() {
+        let keys: number[] = this.props.piano.piano;
         return (
             <>
                 Welcome
@@ -67,8 +64,8 @@ export default class PianoApp extends React.Component<PianoAppProps, PianoAppSta
                 <MIDIDevice connected={false} refreshConnection={this.connectMIDI.bind(this)} />
                 <br />
                 <div>
-                    Keys pressed: <ul>
-                        {this.state.keysPressed.map((key) => {
+                    Key pressed: <ul>
+                        {keys.map((key) => {
                             return <div key={key}>{key}</div>
                         })}
                     </ul>
@@ -77,3 +74,18 @@ export default class PianoApp extends React.Component<PianoAppProps, PianoAppSta
         );
     }
 }
+
+function mapStateToProps(state: PianoAppState) {
+    return { piano: state }
+}
+
+function incrementCounter() {
+
+}
+
+const mapDispatchToProps = (dispatch: Dispatch) => bindActionCreators({
+    onKeyPressed: pianoActions.onKeyPressed,
+    onKeyOff: pianoActions.onKeyOff
+}, dispatch);
+
+export default connect(mapStateToProps, mapDispatchToProps)(PianoApp)
