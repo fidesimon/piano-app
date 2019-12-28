@@ -1,24 +1,21 @@
 import * as React from 'react';
 import { WebMidi } from 'webmidi';
 import { MIDIDevice } from './MIDIDevice';
-import { connect, useDispatch } from 'react-redux';
+import { connect } from 'react-redux';
 import * as pianoActions from '../redux/actions/pianoActions';
 import { bindActionCreators, Dispatch } from 'redux';
+import PianoKeyboard from './PianoKeyboard';
 
 export interface PianoAppProps {
     onKeyPressed: (key: number) => void;
     key?: number;
 }
 
-export interface PianoAppState {
-    keysPressed: number[];
-}
-
 export interface MIDINavigator extends Navigator {
     requestMIDIAccess(options?: WebMidi.MIDIOptions): Promise<WebMidi.MIDIAccess>;
 }
 
-class PianoApp extends React.Component<any, PianoAppState> {
+class PianoApp extends React.Component<any, {}> {
     constructor(props: any) {
         super(props);
         this.state = { keysPressed: [] };
@@ -56,7 +53,8 @@ class PianoApp extends React.Component<any, PianoAppState> {
 
 
     render() {
-        let keys: number[] = this.props.piano.piano;
+        let keys: number[] = this.props.piano.piano.keysPressed;
+        let sigs: string[] = this.props.piano.piano.signatures;
         return (
             <>
                 Welcome
@@ -65,22 +63,20 @@ class PianoApp extends React.Component<any, PianoAppState> {
                 <br />
                 <div>
                     Key pressed: <ul>
-                        {keys.map((key) => {
-                            return <div key={key}>{key}</div>
+                        {sigs.map((key) => {
+                            return <div style={{display: 'none'}} key={key}>{key}</div>
                         })}
                     </ul>
                 </div>
+                {sigs.length > 0 ? <PianoKeyboard keysPressed={this.props.piano.piano.signatures} /> : <PianoKeyboard keysPressed={[]} />}
+                
             </>
         );
     }
 }
 
-function mapStateToProps(state: PianoAppState) {
+function mapStateToProps(state: any) {
     return { piano: state }
-}
-
-function incrementCounter() {
-
 }
 
 const mapDispatchToProps = (dispatch: Dispatch) => bindActionCreators({
